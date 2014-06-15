@@ -1,0 +1,66 @@
+#!/bin/sh
+# Script to contain all commands related to setting up and managing a
+# LaunchAgent .plist.
+#
+# Author: christer@swedakonsult.com
+# Version: 0.1
+# 
+
+LoadLocation=o		# requires PATH
+UnloadLocation=u	# requires PATH
+ListAvailable=l
+StartService=s		# requires SERVICE
+StopService=t			# requires SERVICE
+
+helptext() {
+	# No Action provided - helptext
+	echo "\t$0 {action} [options]"
+	echo "\naction:"
+	echo "\t-$LoadLocation {PATH}\tload the specified location."
+	echo "\t-$UnloadLocation {PATH}\tunload the specified location"
+	echo "\t-$ListAvailable\tlist available services"
+	echo "\t-$StartService {SERVICE}\tstart the specified service"
+	echo "\t-$StopService {SERVICE}\tstop the specified service"
+	echo "\noptions:"
+	echo "\t\tPATH:\tlocation path"
+	echo "\t\tSERVICE:\tservice name"
+	exit 1
+}
+
+while getopts "${LoadLocation}:${UnloadLocation}:${ListAvailable}${StartService}:${StopService}:" Action ; do
+	case $Action in
+		$LoadLocation )
+			if ! [ -d "$OPTARG" ]; then
+				echo "Not a valid path: $OPTARG"
+				helptext
+			fi
+			# Add a network domain item to be run by launchd
+			echo "Loading: $OPTARG"
+			launchctl load -D network "$OPTARG"
+			;;
+		$UnloadLocation )
+			if ! [ -d "$OPTARG" ]; then
+				echo "Not a valid path: $OPTARG"
+				helptext
+			fi
+			# Remove a network domain item to be run by launchd
+			echo "Unloading: $OPTARG"
+			launchctl unload "$OPTARG"
+			;;
+		$ListAvailable )
+			# Get a list of launchd items
+			echo "Listing"
+			launchctl list
+			;;
+		$StartService )
+			# Start a launchd item - based on Label in .plist
+			echo "Starting: $Action"
+			launchctl start "$OPTARG"
+			;;
+		$StopService )
+			# Stop a launchd item - based on Label in .plist
+			echo "Stopping: $Action"
+			launchctl stop "$OPTARG"
+			;;
+	esac
+done
